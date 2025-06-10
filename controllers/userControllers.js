@@ -1,11 +1,14 @@
 const mongoose = require ('mongoose');
 const User = require("../models/userModel");
-const errorHandler = require ("../constants/errrorHandling")
+const errrorHandling = require ("../constants/errrorHandling")
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const handlebars = require('handlebars');
 const crypto = require('crypto');
-const sendEmail = require ("../utils/sendEmail")
+const fs = require('fs');
 
+const path = require('path');
+const sendEmail = require ("../utils/sendEmail")
 
 
 const registerUser = async (req, res, next) => {
@@ -69,66 +72,73 @@ const loginUser = async (req, res, next) => {
       next(error); 
     }
   };
-  const forgotPassword = async (req, res, next) => {
-    const { email } = req.body;
-    console.log("email",sendEmail)
-  
-    try {
+ 
+const forgotPassword = async (req, res, next) => {
+  const { email } = req.body;
+
+  try {
       const user = await User.findOne({ email });
       if (!user) {
-        return res.status(404).json({ message: 'User not found with this email' });
+          return res.status(404).json({ message: 'User not found with this email' });
       }
-  
-      // Generate a token
+
       const resetToken = crypto.randomBytes(32).toString('hex');
       user.reset_password_token = resetToken;
       await user.save();
-      console.log("resetToken",user)
-  
-      const resetUrl = `http://localhost:5000/reset-password/${resetToken}`;
-  
-      // Send email with reset URL
+     
+      const templatePath = path.join(__dirname, 'templates', 'forgotPasswordEmailTemplate.hbs');
+      const templateSource = fs.readFileSync('templates/forgotPasswordEmailTemplate.hbs', 'utf8');
+      const template = handlebars.compile(templateSource);
+
+      const imageUrl = 'http://localhost:5000/email-logo.png';
+      const resetPasswordLink = `http://localhost:5000/reset-password/${resetToken}`; 
+
+      const emailData = {
+          user_first_name: user.first_name,
+          resetPasswordLink: resetPasswordLink,
+          user_token: resetToken,
+          //basecurruntdate: new Date().toISOString(),
+          dataUrl: imageUrl
+      };
+
+      const emailHtml = template(emailData);
+
+      // Send email
       await sendEmail({
-        to: user.email,
-        subject: 'Password Reset',
-        html: `<p>You requested to reset your password. Click <a href="${resetUrl}">here</a> to reset it.</p>`
+          to: user.email,
+          subject: 'Password Reset',
+          html: emailHtml
       });
-  
+
       res.status(200).json({ message: 'Password reset email sent' });
-  
-    } catch (error) {
+
+  } catch (error) {
       next(error);
-    }
-  };
+  }
+};
 
 const resetPassword = async (req, res, next) => {
-const { token } = req.params;
-console.log("token", token);
-const { newPassword } = req.body;
-console.log("newPassword",newPassword )
+  const { token } = req.params;
+  const { newPassword } = req.body;
 
-try {
-  const user = await User.findOne({ reset_password_token: token });
-  console.log("Found user:", user);
+  try {
+      const user = await User.findOne({ reset_password_token: token });
 
-  if (!user) {
-    return res.status(400).json({ message: 'Invalid or expired token' });
+      if (!user) {
+          return res.status(400).json({ message: 'Invalid or expired token' });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      user.password = hashedPassword;
+      user.reset_password_token = null;
+      await user.save();
+
+      res.status(200).json({ message: 'Password reset successfully' });
+
+  } catch (error) {
+      next(error);
   }
-
-  const hashedPassword = await bcrypt.hash(newPassword, 10);
-  user.password = hashedPassword;
-  user.reset_password_token = null;
-  await user.save();
-
-  res.status(200).json({ message: 'Password reset successfully' });
-
-} catch (error) {
-  next(error);
-}
-}
-
-  
-  
+};
 
 module.exports = {registerUser, loginUser,resetPassword,forgotPassword};
   

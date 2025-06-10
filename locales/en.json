@@ -1,0 +1,9 @@
+{
+	"template.forgotPasswordEmail.TITTLE": "template.forgotPasswordEmail.TITTLE",
+	"template.DEAR": "template.DEAR",
+	"template.forgotPasswordEmail.RECIEVED_REQUEST_RESET_PASSWORD": "template.forgotPasswordEmail.RECIEVED_REQUEST_RESET_PASSWORD",
+	"template.forgotPasswordEmail.RESET_PASSWORD_LINK_VALID_TIME": "template.forgotPasswordEmail.RESET_PASSWORD_LINK_VALID_TIME",
+	"template.forgotPasswordEmail.RESET_PASSWORD_IGNORE_MESSAGE": "template.forgotPasswordEmail.RESET_PASSWORD_IGNORE_MESSAGE",
+	"template.CONTACT_FOR_QUESTION_MESSAGE": "template.CONTACT_FOR_QUESTION_MESSAGE",
+	"template.WEBSITE_MORE_DETAIL_MESSAGE": "template.WEBSITE_MORE_DETAIL_MESSAGE"
+}
